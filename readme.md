@@ -16,7 +16,7 @@ En esta sección se encuentran los enlaces directos a los pilares de la investig
 | Documento | Enlace | Descripción |
 | :--- | :--- | :--- |
 | **Plan de Tesis** | [📂 Ver Plan de Tesis](https://www.overleaf.com/project/68e7cd63a47e27b69fb33d11) | Documento detallado con la propuesta, objetivos y metodología. |
-| **Paper ystanormSteroids** | [📄 Ver Publicación](https://www.overleaf.com/project/69f4bca7207c2dbbcda6872d) | Artículo científico relacionado con la normalización de color (ystanormSteroids). |
+| **Paper ystanormSteroids** | [📄 Ver Escrito](https://www.overleaf.com/project/69f4bca7207c2dbbcda6872d) | Artículo científico relacionado con la normalización de color (ystanormSteroids). |
 | **Presentación del Plan** | [📊 Ver Diapositivas]([https://docs.google.com/presentation/d/1xFxV_KivoaXNs03TGSC5uL_tKkOr5U7v3WcjoFuGy_Q/edit?usp=drive_link](https://docs.google.com/presentation/d/1zBj2i8RAs3qsKqfRmF1SM1JC669aSFNx/edit?usp=sharing&ouid=113098263357883750582&rtpof=true&sd=true)) | Material visual utilizado para la sustentación del plan de tesis. |
 
 ---

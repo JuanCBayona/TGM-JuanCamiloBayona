@@ -10,42 +10,102 @@ from torch.utils.data import DataLoader
 
 from torchvision import transforms
 
-from config import (
-    IMAGE_SIZE,
-    UNI_CHECKPOINT
+from torchvision.models import (
+    resnet18,
+    resnet34,
+    resnet50,
+    resnet101,
+
+    densenet121,
+    densenet169,
+    densenet201,
+
+    efficientnet_b0,
+    efficientnet_b1,
+    efficientnet_b2,
+    efficientnet_b3,
+    efficientnet_b4,
+
+    ResNet18_Weights,
+    ResNet34_Weights,
+    ResNet50_Weights,
+    ResNet101_Weights,
+
+    DenseNet121_Weights,
+    DenseNet169_Weights,
+    DenseNet201_Weights,
+
+    EfficientNet_B0_Weights,
+    EfficientNet_B1_Weights,
+    EfficientNet_B2_Weights,
+    EfficientNet_B3_Weights,
+    EfficientNet_B4_Weights
 )
+
+from config import IMAGE_SIZE
 
 from io_utils import get_image_paths
 
 
 class HistologyDataset(Dataset):
 
-    def __init__(self, folder):
+    def __init__(
+        self,
+        folder
+    ):
 
-        self.paths = get_image_paths(folder)
+        self.paths = get_image_paths(
+            folder
+        )
 
         self.transform = transforms.Compose([
-            transforms.Resize((IMAGE_SIZE, IMAGE_SIZE)),
+            transforms.Resize(
+                (
+                    IMAGE_SIZE,
+                    IMAGE_SIZE
+                )
+            ),
             transforms.ToTensor(),
             transforms.Normalize(
-                mean=(0.485, 0.456, 0.406),
-                std=(0.229, 0.224, 0.225)
+                mean=(
+                    0.485,
+                    0.456,
+                    0.406
+                ),
+                std=(
+                    0.229,
+                    0.224,
+                    0.225
+                )
             )
         ])
 
     def __len__(self):
-        return len(self.paths)
 
-    def __getitem__(self, idx):
+        return len(
+            self.paths
+        )
+
+    def __getitem__(
+        self,
+        idx
+    ):
 
         image = Image.open(
             self.paths[idx]
-        ).convert("RGB")
+        ).convert(
+            "RGB"
+        )
 
-        return self.transform(image)
+        return self.transform(
+            image
+        )
 
 
-def load_model(device):
+def load_uni_model(
+    checkpoint_path,
+    device
+):
 
     model = timm.create_model(
         "vit_large_patch16_224",
@@ -57,7 +117,7 @@ def load_model(device):
     )
 
     checkpoint = torch.load(
-        UNI_CHECKPOINT,
+        checkpoint_path,
         map_location="cpu"
     )
 
@@ -68,14 +128,189 @@ def load_model(device):
 
     model.eval()
 
-    model.to(device)
+    model.to(
+        device
+    )
 
     return model
+
+
+def load_torchvision_model(
+    model_type,
+    device
+):
+
+    if model_type == "resnet18":
+
+        model = resnet18(
+            weights=ResNet18_Weights.IMAGENET1K_V1
+        )
+
+        model.fc = torch.nn.Identity()
+
+    elif model_type == "resnet34":
+
+        model = resnet34(
+            weights=ResNet34_Weights.IMAGENET1K_V1
+        )
+
+        model.fc = torch.nn.Identity()
+
+    elif model_type == "resnet50":
+
+        model = resnet50(
+            weights=ResNet50_Weights.IMAGENET1K_V2
+        )
+
+        model.fc = torch.nn.Identity()
+
+    elif model_type == "resnet101":
+
+        model = resnet101(
+            weights=ResNet101_Weights.IMAGENET1K_V2
+        )
+
+        model.fc = torch.nn.Identity()
+
+    elif model_type == "densenet121":
+
+        model = densenet121(
+            weights=DenseNet121_Weights.IMAGENET1K_V1
+        )
+
+        model.classifier = torch.nn.Identity()
+
+    elif model_type == "densenet169":
+
+        model = densenet169(
+            weights=DenseNet169_Weights.IMAGENET1K_V1
+        )
+
+        model.classifier = torch.nn.Identity()
+
+    elif model_type == "densenet201":
+
+        model = densenet201(
+            weights=DenseNet201_Weights.IMAGENET1K_V1
+        )
+
+        model.classifier = torch.nn.Identity()
+
+    elif model_type == "efficientnet_b0":
+
+        model = efficientnet_b0(
+            weights=EfficientNet_B0_Weights.IMAGENET1K_V1
+        )
+
+        model.classifier = torch.nn.Identity()
+
+    elif model_type == "efficientnet_b1":
+
+        model = efficientnet_b1(
+            weights=EfficientNet_B1_Weights.IMAGENET1K_V2
+        )
+
+        model.classifier = torch.nn.Identity()
+
+    elif model_type == "efficientnet_b2":
+
+        model = efficientnet_b2(
+            weights=EfficientNet_B2_Weights.IMAGENET1K_V1
+        )
+
+        model.classifier = torch.nn.Identity()
+
+    elif model_type == "efficientnet_b3":
+
+        model = efficientnet_b3(
+            weights=EfficientNet_B3_Weights.IMAGENET1K_V1
+        )
+
+        model.classifier = torch.nn.Identity()
+
+    elif model_type == "efficientnet_b4":
+
+        model = efficientnet_b4(
+            weights=EfficientNet_B4_Weights.IMAGENET1K_V1
+        )
+
+        model.classifier = torch.nn.Identity()
+
+    else:
+
+        raise ValueError(
+            f"Unsupported model type: "
+            f"{model_type}"
+        )
+
+    model.eval()
+
+    model.to(
+        device
+    )
+
+    return model
+
+
+def load_model(
+    checkpoint_path,
+    model_type,
+    device
+):
+
+    if (
+        checkpoint_path is not None
+        and model_type is not None
+    ):
+
+        raise ValueError(
+            "Specify either "
+            "--checkpoint "
+            "or "
+            "--model-type, "
+            "not both."
+        )
+
+    if (
+        checkpoint_path is None
+        and model_type is None
+    ):
+
+        raise ValueError(
+            "You must specify "
+            "either "
+            "--checkpoint "
+            "or "
+            "--model-type."
+        )
+
+    if checkpoint_path is not None:
+
+        print(
+            "\nUsing UNI model"
+        )
+
+        return load_uni_model(
+            checkpoint_path,
+            device
+        )
+
+    print(
+        f"\nUsing torchvision model: "
+        f"{model_type}"
+    )
+
+    return load_torchvision_model(
+        model_type,
+        device
+    )
 
 
 @torch.no_grad()
 def extract_embeddings(
     dataset_path,
+    checkpoint_path,
+    model_type,
     batch_size,
     num_workers,
     device
@@ -88,7 +323,8 @@ def extract_embeddings(
     if len(dataset) == 0:
 
         raise RuntimeError(
-            f"No images found in {dataset_path}"
+            f"No images found in "
+            f"{dataset_path}"
         )
 
     loader = DataLoader(
@@ -96,10 +332,16 @@ def extract_embeddings(
         batch_size=batch_size,
         shuffle=False,
         num_workers=num_workers,
-        pin_memory=(device == "cuda")
+        pin_memory=(
+            device == "cuda"
+        )
     )
 
-    model = load_model(device)
+    model = load_model(
+        checkpoint_path=checkpoint_path,
+        model_type=model_type,
+        device=device
+    )
 
     features = []
 
@@ -108,11 +350,24 @@ def extract_embeddings(
         f"{len(dataset):,} images..."
     )
 
-    for batch in tqdm(loader):
+    print(
+        f"Total batches: "
+        f"{len(loader):,}"
+    )
 
-        batch = batch.to(device)
+    for batch in tqdm(
+        loader,
+        desc="Extracting embeddings",
+        unit="batch"
+    ):
 
-        embeddings = model(batch)
+        batch = batch.to(
+            device
+        )
+
+        embeddings = model(
+            batch
+        )
 
         embeddings = (
             embeddings

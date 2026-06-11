@@ -17,13 +17,13 @@ class Metrics:
 
     @staticmethod
     def reduce_features(
-        train_features,
-        generated_features
+        source_features,
+        objective_features
     ):
 
         combined = np.vstack([
-            train_features,
-            generated_features
+            source_features,
+            objective_features
         ])
 
         n_components = min(
@@ -41,36 +41,36 @@ class Metrics:
             combined
         )
 
-        train_reduced = reduced[
-            :len(train_features)
+        source_reduced = reduced[
+            :len(source_features)
         ]
 
-        generated_reduced = reduced[
-            len(train_features):
+        objective_reduced = reduced[
+            len(source_features):
         ]
 
         return (
-            train_reduced,
-            generated_reduced
+            source_reduced,
+            objective_reduced
         )
 
     @staticmethod
     def compute_histograms(
-        train_features,
-        generated_features,
+        source_features,
+        objective_features,
         bins=50
     ):
 
-        train_hists = []
-        generated_hists = []
+        source_hists = []
+        objective_hists = []
 
-        num_dims = train_features.shape[1]
+        num_dims = source_features.shape[1]
 
         for dim in range(num_dims):
 
             combined = np.concatenate([
-                train_features[:, dim],
-                generated_features[:, dim]
+                source_features[:, dim],
+                objective_features[:, dim]
             ])
 
             hist_range = (
@@ -79,44 +79,44 @@ class Metrics:
             )
 
             h1, _ = np.histogram(
-                train_features[:, dim],
+                source_features[:, dim],
                 bins=bins,
                 range=hist_range,
                 density=True
             )
 
             h2, _ = np.histogram(
-                generated_features[:, dim],
+                objective_features[:, dim],
                 bins=bins,
                 range=hist_range,
                 density=True
             )
 
-            h1 = h1 + 1e-10
-            h2 = h2 + 1e-10
+            h1 += 1e-10
+            h2 += 1e-10
 
             h1 /= h1.sum()
             h2 /= h2.sum()
 
-            train_hists.append(h1)
-            generated_hists.append(h2)
+            source_hists.append(h1)
+            objective_hists.append(h2)
 
         return (
-            train_hists,
-            generated_hists
+            source_hists,
+            objective_hists
         )
 
     @staticmethod
     def kl_divergence(
-        train_hists,
-        generated_hists
+        source_hists,
+        objective_hists
     ):
 
         values = []
 
         for h1, h2 in zip(
-            train_hists,
-            generated_hists
+            source_hists,
+            objective_hists
         ):
 
             values.append(
@@ -129,20 +129,18 @@ class Metrics:
 
     @staticmethod
     def js_divergence(
-        train_hists,
-        generated_hists
+        source_hists,
+        objective_hists
     ):
 
         values = []
 
         for h1, h2 in zip(
-            train_hists,
-            generated_hists
+            source_hists,
+            objective_hists
         ):
 
-            m = 0.5 * (
-                h1 + h2
-            )
+            m = 0.5 * (h1 + h2)
 
             js = (
                 0.5 * entropy(h1, m)
@@ -158,15 +156,15 @@ class Metrics:
 
     @staticmethod
     def emd_distance(
-        train_hists,
-        generated_hists
+        source_hists,
+        objective_hists
     ):
 
         values = []
 
         for h1, h2 in zip(
-            train_hists,
-            generated_hists
+            source_hists,
+            objective_hists
         ):
 
             values.append(
@@ -182,89 +180,81 @@ class Metrics:
 
     @staticmethod
     def mmd_distance(
-        train_features,
-        generated_features,
+        source_features,
+        objective_features,
         gamma=1.0,
         max_samples=2000
     ):
 
-        rng = np.random.default_rng(
-            42
-        )
+        rng = np.random.default_rng(42)
 
-        if len(train_features) > max_samples:
+        if len(source_features) > max_samples:
 
             idx = rng.choice(
-                len(train_features),
+                len(source_features),
                 max_samples,
                 replace=False
             )
 
-            train_features = (
-                train_features[idx]
-            )
+            source_features = source_features[idx]
 
-        if len(generated_features) > max_samples:
+        if len(objective_features) > max_samples:
 
             idx = rng.choice(
-                len(generated_features),
+                len(objective_features),
                 max_samples,
                 replace=False
             )
 
-            generated_features = (
-                generated_features[idx]
-            )
+            objective_features = objective_features[idx]
 
         xx = rbf_kernel(
-            train_features,
-            train_features,
+            source_features,
+            source_features,
             gamma=gamma
         )
 
         yy = rbf_kernel(
-            generated_features,
-            generated_features,
+            objective_features,
+            objective_features,
             gamma=gamma
         )
 
         xy = rbf_kernel(
-            train_features,
-            generated_features,
+            source_features,
+            objective_features,
             gamma=gamma
         )
 
         return float(
             xx.mean()
-            +
-            yy.mean()
-            -
-            2 * xy.mean()
+            + yy.mean()
+            - 2 * xy.mean()
         )
 
     @staticmethod
     def frechet_distance(
-        train_features,
-        generated_features
+        source_features,
+        objective_features
     ):
 
         mu1 = np.mean(
-            train_features,
+            source_features,
             axis=0
         )
 
         mu2 = np.mean(
-            generated_features,
+            objective_features,
             axis=0
         )
 
         sigma1 = np.cov(
-            train_features,
+            source_features,
             rowvar=False
         )
 
         sigma2 = np.cov(
-            generated_features,
+            objective_features,
             rowvar=False
         )
 
@@ -284,37 +274,31 @@ class Metrics:
             +
             np.trace(
                 sigma1
-                +
-                sigma2
-                -
-                2 * covmean
+                + sigma2
+                - 2 * covmean
             )
         )
 
-        return float(
-            distance
-        )
+        return float(distance)
 
     @staticmethod
     def ks_distance(
-        train_features,
-        generated_features
+        source_features,
+        objective_features
     ):
 
         values = []
 
         for dim in range(
-            train_features.shape[1]
+            source_features.shape[1]
         ):
 
             ks, _ = ks_2samp(
-                train_features[:, dim],
-                generated_features[:, dim]
+                source_features[:, dim],
+                objective_features[:, dim]
             )
 
-            values.append(
-                ks
-            )
+            values.append(ks)
 
         return float(
             np.mean(values)
@@ -322,8 +306,8 @@ class Metrics:
 
     @staticmethod
     def negative_log_likelihood(
-        train_features,
-        generated_features,
+        source_features,
+        objective_features,
         n_components=3
     ):
 
@@ -331,7 +315,7 @@ class Metrics:
             n_components,
             max(
                 1,
-                len(train_features) // 20
+                len(source_features) // 20
             )
         )
 
@@ -343,13 +327,13 @@ class Metrics:
         )
 
         gmm.fit(
-            train_features.astype(
+            source_features.astype(
                 np.float64
             )
         )
 
         log_probs = gmm.score_samples(
-            generated_features.astype(
+            objective_features.astype(
                 np.float64
             )
         )
@@ -359,69 +343,113 @@ class Metrics:
         )
 
     @staticmethod
+    def cosine_similarity(
+        source_features,
+        objective_features
+    ):
+
+        source_mean = np.mean(
+            source_features,
+            axis=0
+        )
+
+        objective_mean = np.mean(
+            objective_features,
+            axis=0
+        )
+
+        numerator = np.dot(
+            source_mean,
+            objective_mean
+        )
+
+        denominator = (
+            np.linalg.norm(
+                source_mean
+            )
+            *
+            np.linalg.norm(
+                objective_mean
+            )
+        )
+
+        return float(
+            numerator /
+            (denominator + 1e-12)
+        )
+
+    @staticmethod
     def evaluate(
-        train_features,
-        generated_features
+        source_features,
+        objective_features
     ):
 
         (
-            train_reduced,
-            generated_reduced
+            source_reduced,
+            objective_reduced
         ) = Metrics.reduce_features(
-            train_features,
-            generated_features
+            source_features,
+            objective_features
         )
 
         (
-            train_hists,
-            generated_hists
+            source_hists,
+            objective_hists
         ) = Metrics.compute_histograms(
-            train_reduced,
-            generated_reduced
+            source_reduced,
+            objective_reduced
         )
 
         results = {}
 
         print("Computing KL...")
         results["KL"] = Metrics.kl_divergence(
-            train_hists,
-            generated_hists
+            source_hists,
+            objective_hists
         )
 
         print("Computing JS...")
         results["JS"] = Metrics.js_divergence(
-            train_hists,
-            generated_hists
+            source_hists,
+            objective_hists
         )
 
         print("Computing EMD...")
         results["EMD"] = Metrics.emd_distance(
-            train_hists,
-            generated_hists
+            source_hists,
+            objective_hists
         )
 
         print("Computing MMD...")
         results["MMD"] = Metrics.mmd_distance(
-            train_reduced,
-            generated_reduced
+            source_reduced,
+            objective_reduced
         )
 
         print("Computing Frechet...")
         results["Frechet"] = Metrics.frechet_distance(
-            train_reduced,
-            generated_reduced
+            source_reduced,
+            objective_reduced
         )
 
         print("Computing KS...")
         results["KS"] = Metrics.ks_distance(
-            train_reduced,
-            generated_reduced
+            source_reduced,
+            objective_reduced
         )
 
         print("Computing NLL...")
         results["NLL"] = Metrics.negative_log_likelihood(
-            train_reduced,
-            generated_reduced
+            source_reduced,
+            objective_reduced
+        )
+
+        print("Computing Cosine Similarity...")
+        results["CosineSimilarity"] = (
+            Metrics.cosine_similarity(
+                source_features,
+                objective_features
+            )
         )
 
         return results

@@ -35,3 +35,39 @@ def get_image_paths(folder):
 def dataset_name_from_path(path):
 
     return Path(path).name
+
+
+def get_relative_image_map(folder):
+
+    folder = Path(folder)
+
+    image_map = {}
+
+    for path in get_image_paths(folder):
+
+        rel = str(
+            path.relative_to(folder)
+        )
+
+        image_map[rel] = path
+
+    return image_map
+
+
+def save_json(
+    data,
+    output_file
+):
+
+    import json
+
+    with open(
+        output_file,
+        "w"
+    ) as f:
+
+        json.dump(
+            data,
+            f,
+            indent=4
+        )

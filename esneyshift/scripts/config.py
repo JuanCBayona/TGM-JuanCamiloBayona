@@ -20,7 +20,4 @@ IMAGE_SIZE = 224
 
 FEATURE_DIM = 1024
 
-UNI_CHECKPOINT = (
-    "/mnt/media2/JuanBayona/esneyshift/"
-    "modelos_fundacionales/UNI/pytorch_model.bin"
-)
+EXAMPLE_PAIRS = 8

@@ -193,13 +193,204 @@ es suficientemente grande como para concluir que las imágenes generadas se encu
 
 ---
 
-# Conclusión
+# Comparación entre ImageNet y CIFAR-10
 
-Tanto las métricas cuantitativas como las proyecciones PCA y UMAP indican que FractalGen logra generar imágenes con apariencia histológica plausible, pero no reproduce completamente la distribución de características presente en el conjunto de entrenamiento.
+Se realizó un segundo experimento utilizando los modelos **ResNet50** y **UNI** como extractores de características. Los conjuntos de datos comparados fueron **ImageNet** y **CIFAR-10**, utilizando 500 imágenes de cada uno.
 
-La formación de un clúster compacto y claramente separado en PCA y UMAP sugiere además una cobertura limitada del espacio de variación histopatológica real, indicando una diversidad insuficiente de las muestras generadas respecto a los datos originales.
+## Resultados cuantitativos
 
-De manera consistente, todas las métricas de distribución aumentan significativamente respecto al escenario de referencia (*train vs train*), siendo especialmente notable el incremento observado en la métrica NLL, que pasa de **116.34** a **255.83**, indicando una pérdida considerable de compatibilidad estadística con la distribución de entrenamiento.
+| Métrica | ResNet50 | UNI | Mejor |
+|----------|----------:|----------:|:------:|
+| KL Divergence ↓ | **0.917576** | 1.324928 | ResNet50 |
+| JS Divergence ↓ | 0.082245 | **0.058502** | UNI |
+| EMD ↓ | 0.008040 | **0.005909** | UNI |
+| MMD ↓ | 0.004537 | **0.004000** | UNI |
+| Fréchet Distance ↓ | **119.936750** | 1113.064191 | ResNet50 |
+| KS Statistic ↓ | 0.157360 | **0.121200** | UNI |
+| Negative Log-Likelihood ↓ | 228.832231 | **143.585602** | UNI |
+| Cosine Similarity ↑ | 0.381647 | **0.554521** | UNI |
+
+En términos generales, ambas redes detectan diferencias significativas entre las distribuciones de ImageNet y CIFAR-10. UNI presenta mejores resultados en la mayoría de las métricas, mientras que ResNet50 obtiene una distancia de Fréchet considerablemente menor.
+
+## Histogramas
+
+Las distribuciones obtenidas mediante UNI presentan una apariencia más cercana a una distribución Gaussiana.
+
+<table>
+<tr>
+<td width="50%" align="center">
+
+**ResNet50**
+
+<img src="https://github.com/user-attachments/assets/a02fbe4d-8475-4102-9677-87bdab6d7f3c">
+
+</td>
+<td width="50%" align="center">
+
+**UNI**
+
+<img src="https://github.com/user-attachments/assets/ffcb500d-f936-4a6e-b9df-d3ee62be3796">
+
+</td>
+</tr>
+</table>
+
+## PCA
+
+Las proyecciones PCA muestran una clara separación entre ambas distribuciones para los dos extractores de características.
+
+<table>
+<tr>
+<td width="50%" align="center">
+
+**ResNet50**
+
+<img src="https://github.com/user-attachments/assets/c4b535df-e85e-4fe7-90e0-2597a03a1609">
+
+</td>
+<td width="50%" align="center">
+
+**UNI**
+
+<img src="https://github.com/user-attachments/assets/60c4f0e6-8840-4b90-9d59-709f288657c8">
+
+</td>
+</tr>
+</table>
+
+## UMAP
+
+UMAP también evidencia una separación consistente entre los conjuntos de datos.
+
+<table>
+<tr>
+<td width="50%" align="center">
+
+**ResNet50**
+
+<img src="https://github.com/user-attachments/assets/9ea94387-49e2-4a9b-8e01-7bbe4d204b57">
+
+</td>
+<td width="50%" align="center">
+
+**UNI**
+
+<img src="https://github.com/user-attachments/assets/fdaa89c7-4e94-47ad-89bf-6e469c91b707">
+
+</td>
+</tr>
+</table>
+
+---
+
+# Comparación condicional
+
+Se realizó un segundo experimento para evaluar comparaciones condicionadas. Se utilizaron:
+
+- El conjunto de entrenamiento empleado en Fractal.
+- El conjunto de validación normalizado mediante Reinhard.
+- El conjunto de validación original utilizado como referencia para la normalización.
+
+La intención fue comparar imágenes que mantienen la misma estructura histológica pero presentan diferencias de coloración.
+
+## Resultados cuantitativos
+
+| Métrica | ResNet50 | UNI | Mejor |
+|----------|----------:|----------:|:------:|
+| KL Divergence ↓ | **3.773083** | 4.212745 | ResNet50 |
+| JS Divergence ↓ | **0.130876** | 0.135359 | ResNet50 |
+| EMD ↓ | **0.005251** | 0.006464 | ResNet50 |
+| MMD ↓ | 0.018870 | **0.018867** | UNI |
+| Fréchet Distance ↓ | **35.161207** | 535.583863 | ResNet50 |
+| KS Statistic ↓ | 0.186631 | **0.177764** | UNI |
+| Negative Log-Likelihood ↓ | **76.553647** | 128.039033 | ResNet50 |
+| Cosine Similarity ↑ | **0.932009** | 0.798396 | ResNet50 |
+| MSE ↓ | 1230.114516 | 1230.114516 | Igual |
+| PSNR ↑ | 18.090802 | 18.090802 | Igual |
+| SSIM ↑ | 0.873172 | 0.873172 | Igual |
+
+A diferencia del experimento anterior, en este caso las imágenes comparten la misma estructura histológica, por lo que se espera una mayor similitud entre distribuciones. Ambas redes reflejan esta situación mediante mayores valores de similitud coseno y menores distancias globales.
+
+## Histogramas
+
+Los histogramas generados por ambos modelos mantienen una forma aproximadamente Gaussiana.
+
+<table>
+<tr>
+<td width="50%" align="center">
+
+**ResNet50**
+
+<img src="https://github.com/user-attachments/assets/0f3d6487-e08a-4842-9a4c-17f565e20165">
+
+</td>
+<td width="50%" align="center">
+
+**UNI**
+
+<img src="https://github.com/user-attachments/assets/5e84fe02-94cd-4868-9cc5-84cdfc067f92">
+
+</td>
+</tr>
+</table>
+
+## PCA
+
+En PCA las distribuciones aparecen considerablemente más cercanas que en el experimento ImageNet–CIFAR10, especialmente para UNI.
+
+<table>
+<tr>
+<td width="50%" align="center">
+
+**ResNet50**
+
+<img src="https://github.com/user-attachments/assets/6f21416b-b0ca-48a6-8b8a-bfa537dc6ff7">
+
+</td>
+<td width="50%" align="center">
+
+**UNI**
+
+<img src="https://github.com/user-attachments/assets/96f18a57-ecc8-4a45-a917-caac93b4aa79">
+
+</td>
+</tr>
+</table>
+
+## UMAP
+
+UMAP continúa mostrando separación entre dominios, aunque menor que la observada entre ImageNet y CIFAR-10.
+
+<table>
+<tr>
+<td width="50%" align="center">
+
+**ResNet50**
+
+<img src="https://github.com/user-attachments/assets/f07d34d3-469b-48d1-9151-335872ad7201">
+
+</td>
+<td width="50%" align="center">
+
+**UNI**
+
+<img src="https://github.com/user-attachments/assets/e243ee54-9666-460d-9161-3514771ce9f7">
+
+</td>
+</tr>
+</table>
+
+## Conclusiones
+
+- Ambos extractores distinguen claramente ImageNet y CIFAR-10 mediante histogramas, PCA y UMAP.
+- UNI obtiene mejores resultados en la mayoría de las métricas de divergencia durante la comparación no condicional.
+- ResNet50 presenta distancias de Fréchet significativamente menores en ambos experimentos.
+- En las comparaciones condicionadas, las métricas reflejan una mayor similitud entre dominios debido a la preservación de las estructuras histológicas.
+- PCA evidencia una proximidad considerable entre distribuciones condicionadas, mientras que UMAP continúa detectando diferencias de dominio residuales.
+
+
+
+
 
 
 

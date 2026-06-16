@@ -39,6 +39,11 @@ from io_utils import (
 
 from config import CACHE_DIR
 
+from config_loader import (
+    load_config,
+    merge_config_with_args
+)
+
 
 def get_feature_file(
     dataset_path,
@@ -59,7 +64,8 @@ def get_feature_file(
     ).hexdigest()[:12]
 
     return (
-        CACHE_DIR /
+        CACHE_DIR
+        /
         f"{path_hash}.npy"
     )
 
@@ -83,7 +89,8 @@ def get_metadata_file(
     ).hexdigest()[:12]
 
     return (
-        CACHE_DIR /
+        CACHE_DIR
+        /
         f"{path_hash}.json"
     )
 
@@ -214,6 +221,10 @@ def save_embedding_metrics(
         output_dir
     )
 
+    ensure_dir(
+        output_dir
+    )
+
     with open(
         output_dir /
         "metrics.json",
@@ -282,11 +293,60 @@ def print_results(
     for key, value in results.items():
 
         print(
-            f"{key:<25} "
-            f": {value:.6f}"
+            f"{key:<25}: {value:.6f}"
         )
 
     print("=" * 60)
+
+
+def run_embedding_comparison(
+    comparison_name,
+    features_a,
+    features_b,
+    output_dir
+):
+
+    print(
+        f"\nRunning comparison: "
+        f"{comparison_name}"
+    )
+
+    comparison_dir = (
+        Path(output_dir)
+        / comparison_name
+    )
+
+    ensure_dir(
+        comparison_dir
+    )
+
+    metrics = Metrics.evaluate(
+        features_a,
+        features_b
+    )
+
+    print_results(
+        metrics,
+        comparison_name.upper()
+    )
+
+    save_embedding_metrics(
+        metrics,
+        comparison_dir
+    )
+
+    print(
+        "\nCreating visualizations..."
+    )
+
+    Visualizer.create_embedding_visualizations(
+        features_a,
+        features_b,
+        metrics,
+        comparison_dir
+    )
+
+    return metrics
 
 
 def save_run_metadata(
@@ -369,68 +429,31 @@ def save_run_metadata(
 def main():
 
     parser = argparse.ArgumentParser(
-        description=(
-            "Dataset comparison "
-            "using deep features"
-        )
+        description="Dataset comparison using deep features"
     )
 
-    parser.add_argument(
-        "--checkpoint",
-        default=None,
-        help=(
-            "UNI checkpoint path"
-        )
-    )
-
-    parser.add_argument(
-        "--model-type",
-        default=None,
-        help=(
-            "resnet18, "
-            "resnet34, "
-            "resnet50, "
-            "resnet101, "
-            "densenet121, "
-            "densenet169, "
-            "densenet201, "
-            "efficientnet_b0-b4"
-        )
-    )
-
-    parser.add_argument(
-        "--source",
-        required=True
-    )
-
-    parser.add_argument(
-        "--objective",
-        required=True
-    )
-
-    parser.add_argument(
-        "--originals",
-        default=None
-    )
-
-    parser.add_argument(
-        "--batch-size",
-        type=int,
-        default=64
-    )
-
-    parser.add_argument(
-        "--num-workers",
-        type=int,
-        default=8
-    )
-
-    parser.add_argument(
-        "--output",
-        default="results"
-    )
+    parser.add_argument("--config", default=None)
+    parser.add_argument("--checkpoint", default=None)
+    parser.add_argument("--model-type", default=None)
+    parser.add_argument("--source", default=None)
+    parser.add_argument("--objective", default=None)
+    parser.add_argument("--originals", default=None)
+    parser.add_argument("--batch-size", type=int, default=64)
+    parser.add_argument("--num-workers", type=int, default=8)
+    parser.add_argument("--output", default="results")
 
     args = parser.parse_args()
+
+    if args.config is not None:
+
+        config = load_config(
+            args.config
+        )
+
+        args = merge_config_with_args(
+            args,
+            config
+        )
 
     validate_all(
         source_dir=args.source,
@@ -440,13 +463,8 @@ def main():
         originals_dir=args.originals
     )
 
-    ensure_dir(
-        CACHE_DIR
-    )
-
-    ensure_dir(
-        args.output
-    )
+    ensure_dir(CACHE_DIR)
+    ensure_dir(args.output)
 
     device = (
         "cuda"
@@ -455,79 +473,87 @@ def main():
     )
 
     print(
-        f"\nUsing device: "
-        f"{device}"
+        f"\nUsing device: {device}"
     )
 
     source_features = load_or_extract(
-        dataset_path=args.source,
-        checkpoint_path=args.checkpoint,
-        model_type=args.model_type,
-        batch_size=args.batch_size,
-        num_workers=args.num_workers,
-        device=device
+        args.source,
+        args.checkpoint,
+        args.model_type,
+        args.batch_size,
+        args.num_workers,
+        device
     )
 
     objective_features = load_or_extract(
-        dataset_path=args.objective,
-        checkpoint_path=args.checkpoint,
-        model_type=args.model_type,
-        batch_size=args.batch_size,
-        num_workers=args.num_workers,
-        device=device
+        args.objective,
+        args.checkpoint,
+        args.model_type,
+        args.batch_size,
+        args.num_workers,
+        device
     )
 
-    print(
-        "\nSource feature shape:"
-    )
+    originals_features = None
 
-    print(
-        source_features.shape
-    )
+    if args.originals is not None:
 
-    print(
-        "\nObjective feature shape:"
-    )
+        originals_features = load_or_extract(
+            args.originals,
+            args.checkpoint,
+            args.model_type,
+            args.batch_size,
+            args.num_workers,
+            device
+        )
 
-    print(
-        objective_features.shape
-    )
-
-    embedding_metrics = (
-        Metrics.evaluate(
+    source_vs_objective_metrics = (
+        run_embedding_comparison(
+            "source_vs_objective",
             source_features,
-            objective_features
+            objective_features,
+            args.output
         )
     )
 
-    print_results(
-        embedding_metrics,
-        "EMBEDDING METRICS"
-    )
+    source_vs_originals_metrics = None
+    originals_vs_objective_metrics = None
 
-    save_embedding_metrics(
-        embedding_metrics,
-        args.output
-    )
+    if originals_features is not None:
 
-    print(
-        "\nCreating embedding visualizations..."
-    )
+        source_vs_originals_metrics = (
+            run_embedding_comparison(
+                "source_vs_originals",
+                source_features,
+                originals_features,
+                args.output
+            )
+        )
 
-    Visualizer.create_embedding_visualizations(
-        source_features,
-        objective_features,
-        embedding_metrics,
-        args.output
-    )
+        originals_vs_objective_metrics = (
+            run_embedding_comparison(
+                "originals_vs_objective",
+                originals_features,
+                objective_features,
+                args.output
+            )
+        )
+
+        print(
+            "\nCreating global visualizations..."
+        )
+
+        Visualizer.create_global_visualizations(
+            source_features,
+            objective_features,
+            originals_features,
+            Path(args.output)
+            / "global"
+        )
 
     conditional_results = None
 
     if args.originals:
-
-        print(
-            "\nComputing conditional metrics..."
-        )
 
         conditional_results = (
             ImageMetrics.evaluate(
@@ -537,9 +563,7 @@ def main():
         )
 
         print_results(
-            conditional_results[
-                "summary"
-            ],
+            conditional_results["summary"],
             "CONDITIONAL METRICS"
         )
 
@@ -548,19 +572,30 @@ def main():
             args.output
         )
 
-        print(
-            "\nCreating conditional visualizations..."
-        )
-
         Visualizer.create_conditional_visualizations(
             conditional_results,
             args.output
         )
 
+    save_json(
+        {
+            "source_vs_objective":
+            source_vs_objective_metrics,
+
+            "source_vs_originals":
+            source_vs_originals_metrics,
+
+            "originals_vs_objective":
+            originals_vs_objective_metrics
+        },
+        Path(args.output)
+        / "all_embedding_metrics.json"
+    )
+
     save_run_metadata(
-        args=args,
-        device=device,
-        output_dir=args.output
+        args,
+        device,
+        args.output
     )
 
     ReportGenerator.create_report(
@@ -568,21 +603,14 @@ def main():
             Path(args.output)
             / "report.md"
         ),
-
         source_path=args.source,
-
         objective_path=args.objective,
-
         originals_path=args.originals,
-
-        embedding_metrics=embedding_metrics,
-
+        embedding_metrics=source_vs_objective_metrics,
         conditional_metrics=(
             None
             if conditional_results is None
-            else conditional_results[
-                "summary"
-            ]
+            else conditional_results["summary"]
         )
     )
 
@@ -591,13 +619,7 @@ def main():
     )
 
     print(
-        "\nResults saved in:"
-    )
-
-    print(
-        Path(
-            args.output
-        ).resolve()
+        Path(args.output).resolve()
     )
 
 

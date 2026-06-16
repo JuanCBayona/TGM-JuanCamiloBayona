@@ -104,6 +104,51 @@ def validate_model_selection(
             )
 
 
+def validate_dataset_relationships(
+    source_dir,
+    objective_dir,
+    originals_dir=None
+):
+
+    source_dir = Path(
+        source_dir
+    ).resolve()
+
+    objective_dir = Path(
+        objective_dir
+    ).resolve()
+
+    if source_dir == objective_dir:
+
+        raise RuntimeError(
+            "Source dataset and "
+            "objective dataset "
+            "cannot be the same folder."
+        )
+
+    if originals_dir is not None:
+
+        originals_dir = Path(
+            originals_dir
+        ).resolve()
+
+        if source_dir == originals_dir:
+
+            raise RuntimeError(
+                "Source dataset and "
+                "originals dataset "
+                "cannot be the same folder."
+            )
+
+        if objective_dir == originals_dir:
+
+            raise RuntimeError(
+                "Objective dataset and "
+                "originals dataset "
+                "cannot be the same folder."
+            )
+
+
 def validate_conditional_pairs(
     originals_dir,
     objective_dir
@@ -147,6 +192,24 @@ def validate_conditional_pairs(
         )
 
 
+def validate_required_inputs(
+    source_dir,
+    objective_dir
+):
+
+    if source_dir is None:
+
+        raise RuntimeError(
+            "Missing source dataset."
+        )
+
+    if objective_dir is None:
+
+        raise RuntimeError(
+            "Missing objective dataset."
+        )
+
+
 def validate_all(
     source_dir,
     objective_dir,
@@ -154,6 +217,11 @@ def validate_all(
     model_type=None,
     originals_dir=None
 ):
+
+    validate_required_inputs(
+        source_dir,
+        objective_dir
+    )
 
     validate_directory(
         source_dir,
@@ -168,6 +236,12 @@ def validate_all(
     validate_model_selection(
         checkpoint_path,
         model_type
+    )
+
+    validate_dataset_relationships(
+        source_dir,
+        objective_dir,
+        originals_dir
     )
 
     if originals_dir is not None:

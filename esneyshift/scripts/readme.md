@@ -389,13 +389,7 @@ UMAP continúa mostrando separación entre dominios, aunque menor que la observa
 - PCA evidencia una proximidad considerable entre distribuciones condicionadas, mientras que UMAP continúa detectando diferencias de dominio residuales.
 
 
-
-NECESITO AUN AGREGAR DATASETS DESDE KAGGLE O DRIVE.
-
-FALTA COMPARAR TAMBIEN DISTANCIA ENTRE TRAIN Y ORIGINAL (YA SE TIENE TRAIN VS GENERADO)
-
-DEBO TRAERME LA IMPLEMENTACION QUE PUSE EN RIMOMA PARA LAS NORMALIZACIONES SACADAS DEL TIATOOLS.
-
+https://drive.google.com/file/d/1u4qDDNrZ9NH2wUGFD1-p62KhC7Y0oFB_/view?usp=sharing
 
 
 

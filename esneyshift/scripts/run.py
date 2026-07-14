@@ -15,6 +15,14 @@ from extract_features import (
 
 from metrics import Metrics
 
+from inception_features import (
+    load_or_extract_inception
+)
+
+from generative_metrics import (
+    GenerativeMetrics
+)
+
 from image_metrics import (
     ImageMetrics
 )
@@ -24,7 +32,8 @@ from visualization import (
 )
 
 from validation import (
-    validate_all
+    validate_all,
+    is_self_comparison
 )
 
 from report import (
@@ -34,7 +43,8 @@ from report import (
 from io_utils import (
     ensure_dir,
     save_json,
-    get_image_paths
+    get_image_paths,
+    resolve_output_dir
 )
 
 from config import CACHE_DIR
@@ -303,7 +313,11 @@ def run_embedding_comparison(
     comparison_name,
     features_a,
     features_b,
-    output_dir
+    output_dir,
+    inception_a=None,
+    inception_b=None,
+    label_a="source",
+    label_b="objective"
 ):
 
     print(
@@ -324,6 +338,23 @@ def run_embedding_comparison(
         features_a,
         features_b
     )
+
+    if (
+        inception_a is not None
+        and
+        inception_b is not None
+    ):
+
+        metrics.update(
+            GenerativeMetrics.evaluate(
+                source_features=inception_a[0],
+                objective_features=inception_b[0],
+                source_probabilities=inception_a[1],
+                objective_probabilities=inception_b[1],
+                source_label=label_a,
+                objective_label=label_b
+            )
+        )
 
     print_results(
         metrics,
@@ -393,6 +424,11 @@ def save_run_metadata(
         "device":
         device,
 
+        "fid_is_enabled":
+        (
+            not args.skip_fid_is
+        ),
+
         "source_images":
         len(
             get_image_paths(
@@ -442,6 +478,28 @@ def main():
     parser.add_argument("--num-workers", type=int, default=8)
     parser.add_argument("--output", default="results")
 
+    parser.add_argument(
+        "--allow-self-comparison",
+        action="store_true",
+        default=None,
+        help=(
+            "Allow --source and --objective to point at the "
+            "same folder. Sanity check: every distance should "
+            "come back ~0 and CosineSimilarity ~1.0."
+        )
+    )
+
+    parser.add_argument(
+        "--skip-fid-is",
+        action="store_true",
+        default=None,
+        help=(
+            "Skip FID / Inception Score "
+            "(avoids the extra InceptionV3 pass "
+            "over every dataset)."
+        )
+    )
+
     args = parser.parse_args()
 
     if args.config is not None:
@@ -455,16 +513,53 @@ def main():
             config
         )
 
+    args.output = resolve_output_dir(
+        args.output
+    )
+
     validate_all(
         source_dir=args.source,
         objective_dir=args.objective,
         checkpoint_path=args.checkpoint,
         model_type=args.model_type,
-        originals_dir=args.originals
+        originals_dir=args.originals,
+        allow_self_comparison=bool(
+            args.allow_self_comparison
+        )
     )
+
+    self_comparison = is_self_comparison(
+        args.source,
+        args.objective
+    )
+
+    if self_comparison:
+
+        print("\n")
+        print("=" * 60)
+        print("SELF-COMPARISON (SANITY CHECK)")
+        print("=" * 60)
+        print(
+            "Source and objective are the same folder.\n\n"
+            "Expected: KL, JS, EMD, MMD, KS, Frechet and FID\n"
+            "all ~0, CosineSimilarity ~1.0, and both IS values\n"
+            "identical.\n\n"
+            "NLL will NOT be 0: it is the cross-entropy of a GMM\n"
+            "fitted on the source, so it stays at the entropy of\n"
+            "the data itself. Use its value here as the 'no shift'\n"
+            "reference point for real comparisons.\n\n"
+            "Tiny non-zero values (~1e-6) in Frechet/FID are\n"
+            "floating-point error in the matrix square root, not\n"
+            "real shift."
+        )
+        print("=" * 60)
 
     ensure_dir(CACHE_DIR)
     ensure_dir(args.output)
+
+    print(
+        f"\nSaving results to: {args.output}"
+    )
 
     device = (
         "cuda"
@@ -507,12 +602,52 @@ def main():
             device
         )
 
+    source_inception = None
+    objective_inception = None
+    originals_inception = None
+
+    if not args.skip_fid_is:
+
+        print(
+            "\nPreparing InceptionV3 activations "
+            "for FID / IS..."
+        )
+
+        source_inception = load_or_extract_inception(
+            args.source,
+            args.batch_size,
+            args.num_workers,
+            device
+        )
+
+        objective_inception = load_or_extract_inception(
+            args.objective,
+            args.batch_size,
+            args.num_workers,
+            device
+        )
+
+        if args.originals is not None:
+
+            originals_inception = (
+                load_or_extract_inception(
+                    args.originals,
+                    args.batch_size,
+                    args.num_workers,
+                    device
+                )
+            )
+
     source_vs_objective_metrics = (
         run_embedding_comparison(
             "source_vs_objective",
             source_features,
             objective_features,
-            args.output
+            args.output,
+            inception_a=source_inception,
+            inception_b=objective_inception,
+            label_a="source",
+            label_b="objective"
         )
     )
 
@@ -526,7 +661,11 @@ def main():
                 "source_vs_originals",
                 source_features,
                 originals_features,
-                args.output
+                args.output,
+                inception_a=source_inception,
+                inception_b=originals_inception,
+                label_a="source",
+                label_b="originals"
             )
         )
 
@@ -535,7 +674,11 @@ def main():
                 "originals_vs_objective",
                 originals_features,
                 objective_features,
-                args.output
+                args.output,
+                inception_a=originals_inception,
+                inception_b=objective_inception,
+                label_a="originals",
+                label_b="objective"
             )
         )
 

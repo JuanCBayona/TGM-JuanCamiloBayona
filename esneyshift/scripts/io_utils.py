@@ -1,6 +1,36 @@
 from pathlib import Path
 
-from config import SUPPORTED_EXTENSIONS
+from config import (
+    SUPPORTED_EXTENSIONS,
+    PROJECT_ROOT
+)
+
+
+def resolve_output_dir(output):
+    """
+    Resolves the results folder relative to the project root
+    (one level above the scripts folder), not to the current
+    working directory.
+
+        --output results  ->  <project_root>/results
+
+    Absolute paths (and paths starting with ~) are respected
+    as given.
+    """
+
+    output = Path(
+        output
+    ).expanduser()
+
+    if output.is_absolute():
+
+        return output
+
+    return (
+        PROJECT_ROOT
+        /
+        output
+    ).resolve()
 
 
 def ensure_dir(path):

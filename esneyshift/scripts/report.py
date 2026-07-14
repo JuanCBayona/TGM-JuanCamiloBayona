@@ -77,6 +77,7 @@ class ReportGenerator:
             "EMD",
             "MMD",
             "Frechet",
+            "FID",
             "KS",
             "NLL"
         ]

@@ -2,14 +2,12 @@ checkpoint:
 
 model_type: resnet50
 
-source: /mnt/media2/JuanBayona/DataSets/combined_datasets/train/histopathology
+source: /mnt/media2/JuanBayona/DataSets/combined_datasets/RINGS
+objective: /mnt/media2/JuanBayona/DataSets/combined_datasets/CoCaHis
 
-objective: /mnt/media2/JuanBayona/DataSets/combined_datasets/val_Reinhard
-
-originals: /mnt/media2/JuanBayona/DataSets/combined_datasets/val/histopathology
-
+originals: 
 batch_size: 64
 
 num_workers: 8
 
-output: results_reinhard
+output: results_rings_cocahis

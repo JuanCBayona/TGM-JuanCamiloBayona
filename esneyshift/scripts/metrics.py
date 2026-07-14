@@ -10,7 +10,10 @@ from sklearn.metrics.pairwise import rbf_kernel
 from sklearn.decomposition import PCA
 from sklearn.mixture import GaussianMixture
 
-from config import PCA_COMPONENTS
+from config import (
+    PCA_COMPONENTS,
+    RANDOM_SEED
+)
 
 
 class Metrics:
@@ -156,21 +159,30 @@ class Metrics:
 
     @staticmethod
     def emd_distance(
-        source_hists,
-        objective_hists
+        source_features,
+        objective_features
     ):
+        """
+        Mean per-dimension Wasserstein-1 (Earth Mover's) distance.
+
+        NOTE: this operates on the raw (PCA-reduced) values, NOT on
+        the histogram bin masses. Passing the bin masses to
+        wasserstein_distance treats each bin HEIGHT as if it were a
+        sample location, which is invariant to permuting the bins and
+        is therefore blind to a location shift between the two
+        distributions - it measures nothing meaningful.
+        """
 
         values = []
 
-        for h1, h2 in zip(
-            source_hists,
-            objective_hists
+        for dim in range(
+            source_features.shape[1]
         ):
 
             values.append(
                 wasserstein_distance(
-                    h1,
-                    h2
+                    source_features[:, dim],
+                    objective_features[:, dim]
                 )
             )
 
@@ -186,11 +198,16 @@ class Metrics:
         max_samples=2000
     ):
 
-        rng = np.random.default_rng(42)
+        # A fresh RNG per array (rather than one shared, advancing
+        # RNG) means two identical inputs draw the SAME subsample.
+        # Without this, a dataset compared against itself would be
+        # subsampled two different ways and MMD would never reach 0.
 
         if len(source_features) > max_samples:
 
-            idx = rng.choice(
+            idx = np.random.default_rng(
+                RANDOM_SEED
+            ).choice(
                 len(source_features),
                 max_samples,
                 replace=False
@@ -200,7 +217,9 @@ class Metrics:
 
         if len(objective_features) > max_samples:
 
-            idx = rng.choice(
+            idx = np.random.default_rng(
+                RANDOM_SEED
+            ).choice(
                 len(objective_features),
                 max_samples,
                 replace=False
@@ -416,8 +435,8 @@ class Metrics:
 
         print("Computing EMD...")
         results["EMD"] = Metrics.emd_distance(
-            source_hists,
-            objective_hists
+            source_reduced,
+            objective_reduced
         )
 
         print("Computing MMD...")

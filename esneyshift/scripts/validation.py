@@ -104,10 +104,23 @@ def validate_model_selection(
             )
 
 
+def is_self_comparison(
+    source_dir,
+    objective_dir
+):
+
+    return (
+        Path(source_dir).resolve()
+        ==
+        Path(objective_dir).resolve()
+    )
+
+
 def validate_dataset_relationships(
     source_dir,
     objective_dir,
-    originals_dir=None
+    originals_dir=None,
+    allow_self_comparison=False
 ):
 
     source_dir = Path(
@@ -120,11 +133,19 @@ def validate_dataset_relationships(
 
     if source_dir == objective_dir:
 
-        raise RuntimeError(
-            "Source dataset and "
-            "objective dataset "
-            "cannot be the same folder."
-        )
+        if not allow_self_comparison:
+
+            raise RuntimeError(
+                "Source dataset and "
+                "objective dataset "
+                "are the same folder.\n\n"
+                "If this is intentional "
+                "(a sanity check, which should "
+                "return ~0 for every distance "
+                "and 1.0 for cosine similarity), "
+                "re-run with:\n\n"
+                "    --allow-self-comparison"
+            )
 
     if originals_dir is not None:
 
@@ -132,7 +153,11 @@ def validate_dataset_relationships(
             originals_dir
         ).resolve()
 
-        if source_dir == originals_dir:
+        if (
+            source_dir == originals_dir
+            and
+            not allow_self_comparison
+        ):
 
             raise RuntimeError(
                 "Source dataset and "
@@ -140,7 +165,11 @@ def validate_dataset_relationships(
                 "cannot be the same folder."
             )
 
-        if objective_dir == originals_dir:
+        if (
+            objective_dir == originals_dir
+            and
+            not allow_self_comparison
+        ):
 
             raise RuntimeError(
                 "Objective dataset and "
@@ -215,7 +244,8 @@ def validate_all(
     objective_dir,
     checkpoint_path=None,
     model_type=None,
-    originals_dir=None
+    originals_dir=None,
+    allow_self_comparison=False
 ):
 
     validate_required_inputs(
@@ -241,7 +271,8 @@ def validate_all(
     validate_dataset_relationships(
         source_dir,
         objective_dir,
-        originals_dir
+        originals_dir,
+        allow_self_comparison
     )
 
     if originals_dir is not None:

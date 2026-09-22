@@ -4,25 +4,25 @@ Bienvenido al repositorio central para el seguimiento y gestión de mi trabajo d
 
 ---
 
-## 👤 Investigador
+## Investigador
 **Juan Camilo Bayona Quesada** *Ingeniero de Sistemas y de Computación* *Estudiante de Maestría en Ingeniería de Sistemas*
 
 ---
 
-## 📑 Documentación Principal
+## Documentación Principal
 
 En esta sección se encuentran los enlaces directos a los pilares de la investigación:
 
 | Documento | Enlace | Descripción |
 | :--- | :--- | :--- |
-| **Plan de Tesis** | [📂 Ver Plan de Tesis](https://www.overleaf.com/project/68e7cd63a47e27b69fb33d11) | Documento detallado con la propuesta, objetivos y metodología. |
-| **Paper ystanormSteroids** | [📄 Ver Escrito](https://www.overleaf.com/project/69f4bca7207c2dbbcda6872d) | Artículo científico relacionado con la normalización de color (ystanormSteroids). |
+| **Plan de Tesis** | [Ver Plan de Tesis](https://www.overleaf.com/project/68e7cd63a47e27b69fb33d11) | Documento detallado con la propuesta, objetivos y metodología. |
+| **Paper ystanormSteroids** | [Ver Escrito](https://www.overleaf.com/project/69f4bca7207c2dbbcda6872d) | Artículo científico relacionado con la normalización de color (ystanormSteroids). |
 | **Paper Tesis** | [Ver en OverLeaf](https://www.overleaf.com/project/6ab1b129055363a01b3aa862) | Artículo que usa un método generativo para normalizar la tinción en imágenes histológicas |
 
 
 ---
 
-## 🔬 Enfoque de la Investigación
+## Enfoque de la Investigación
 
 Mi trabajo se centra actualmente en el análisis de imágenes histopatológicas, específicamente en:
 - **Normalización de color:** Desarrollo de métodos robustos para la consistencia en imágenes de patología digital.
@@ -33,7 +33,7 @@ Mi trabajo se centra actualmente en el análisis de imágenes histopatológicas,
 
 ---
 
-## 🛠️ Tecnologías y Herramientas principales
+## Tecnologías y Herramientas principales
 
 ![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)
 ![PyTorch](https://img.shields.io/badge/PyTorch-%23EE4C2C.svg?style=for-the-badge&logo=PyTorch&logoColor=white)
@@ -42,11 +42,11 @@ Mi trabajo se centra actualmente en el análisis de imágenes histopatológicas,
 
 ---
 
-## 📈 Estado del Proyecto
+## Estado del Proyecto
 
 - [x] Definición del problema
 - [x] Sometimiento de Plan de Tesis
-- [ ] Desarrollo experimental
+- [x] Desarrollo experimental
 - [ ] Escritura de tesis final
 - [ ] Sustentación
 ---

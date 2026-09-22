@@ -17,6 +17,7 @@ En esta sección se encuentran los enlaces directos a los pilares de la investig
 | :--- | :--- | :--- |
 | **Plan de Tesis** | [📂 Ver Plan de Tesis](https://www.overleaf.com/project/68e7cd63a47e27b69fb33d11) | Documento detallado con la propuesta, objetivos y metodología. |
 | **Paper ystanormSteroids** | [📄 Ver Escrito](https://www.overleaf.com/project/69f4bca7207c2dbbcda6872d) | Artículo científico relacionado con la normalización de color (ystanormSteroids). |
+| **Paper Tesis** | [Ver en OverLeaf](https://www.overleaf.com/project/6ab1b129055363a01b3aa862) | Artículo que usa un método generativo para normalizar la tinción en imágenes histológicas |
 
 
 ---
